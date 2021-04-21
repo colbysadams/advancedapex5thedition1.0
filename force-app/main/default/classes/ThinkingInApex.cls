@@ -28,10 +28,17 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public with sharing class ThinkingInApex {
 
-	public Boolean SimpleFieldAccess() {
+	private static Boolean isUserSpecialChecked = false;
+	private static Boolean userIsSpecial = false;
+	
+	public static Boolean isUserSpecial()
+	{
+		if(isUserSpecialChecked) return userIsSpecial;
+		
 		User u = [Select UserIsSpecial__c from User where ID = :UserInfo.getUserId()];
-        Boolean userIsSpecial = u.UserIsSpecial__c;
-        return UserIsSpecial;
+    	userIsSpecial = u.UserIsSpecial__c;
+    	isUserSpecialChecked = true;
+    	return userIsSpecial;
 	}
 
 }
