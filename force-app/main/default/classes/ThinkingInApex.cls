@@ -28,17 +28,32 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public with sharing class ThinkingInApex {
 
-	private static Boolean isUserSpecialChecked = false;
+	private static Boolean userCacheLoaded = false;
 	private static Boolean userIsSpecial = false;
-	
+	private static String userTimeZone = null;	
+
 	public static Boolean isUserSpecial()
 	{
-		if(isUserSpecialChecked) return userIsSpecial;
-		
-		User u = [Select UserIsSpecial__c from User where ID = :UserInfo.getUserId()];
+		if(userCacheLoaded) return userIsSpecial;
+		cacheUserInfo();
+		return userIsSpecial;	
+	}
+
+	public static String userTimeZone()
+	{
+		if(userCacheLoaded) return userTimeZone;
+		cacheUserInfo();
+		return userTimeZone;	
+	}
+
+	
+	private static void cacheUserInfo()
+	{
+		if(userCacheLoaded) return;
+		User u = [Select UserIsSpecial__c, TimeZoneSidKey from User where ID = :UserInfo.getUserId()];
     	userIsSpecial = u.UserIsSpecial__c;
-    	isUserSpecialChecked = true;
-    	return userIsSpecial;
+    	userTimeZone = u.TimeZoneSidKey;
+		userCacheLoaded = true;
 	}
 
 }
