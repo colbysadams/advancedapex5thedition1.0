@@ -27,5 +27,5 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 trigger OnOpportunity on Opportunity (after update) {
-	BulkPatterns.afterUpdateOpportunityAwful(trigger.new, trigger.oldmap);
+	BulkPatterns.afterUpdateOpportunityCommon(trigger.new, trigger.newmap, trigger.oldmap);
 }

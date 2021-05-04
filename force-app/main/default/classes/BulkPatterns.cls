@@ -28,123 +28,165 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public with sharing class BulkPatterns {
 
-	/* Bad implementation. Not included in the book - just used for limits comparison
-        and to demonstrate what an Apex beginner who did not receive a proper education might do...
-        If you decide to run it, reduce the number of objects by setting the data initialization in bulkOpportuniityTest to:
-        initTestObjects(ops, 50, 10, 10, 20); 
-        And the opportunity count in createTaskTest to 50.
-		When testing, set the Apex debug log level to 'Error', the Profiling level to 'Info', and the to 'None'
-        
-        In one sample run, the results I saw for bulkOpportunityTest were:
-        Number of SOQL queries: 100 out of 100 ******* CLOSE TO LIMIT
-        Number of query rows: 16000 out of 50000
-        Number of SOSL queries: 0 out of 20
-        Number of DML statements: 51 out of 150
-        Number of DML rows: 100 out of 10000
-        Maximum CPU time: 1269 out of 10000
 
-        And for createTaskTest:
-        Number of SOQL queries: 100 out of 100 ******* CLOSE TO LIMIT
-        Number of query rows: 0 out of 50000
-        Number of SOSL queries: 0 out of 20
-        Number of DML statements: 51 out of 150
-        Number of DML rows: 100 out of 10000
-        Maximum CPU time: 973 out of 10000
-    */
+	/*
+		This is a common solution - what you might expect to see from a moderately experienced Apex developer
 
-	public static void afterUpdateOpportunityAwful(
-		List<Opportunity> newList, Map<ID, Opportunity> oldMap)
+		Sample results (TestBulkPatterns.initTestObjects(ops, 100, 15, 15, 40)):
+		bulkOpportunityTest - 
+		Number of SOQL queries: 2 out of 100
+		Number of query rows: 3265 out of 50000
+		Number of SOSL queries: 0 out of 20
+		Number of DML statements: 2 out of 150
+		Number of DML rows: 200 out of 10000
+		Maximum CPU time: 1735 out of 10000
+
+		createTaskTest
+		Number of SOQL queries: 2 out of 100
+		Number of query rows: 0 out of 50000
+		Number of SOSL queries: 0 out of 20
+		Number of DML statements: 2 out of 150
+		Number of DML rows: 200 out of 10000
+		Maximum CPU time: 151 out of 10000    
+	*/
+
+	public static void afterUpdateOpportunityCommon(
+		List<Opportunity> newList, Map<ID, Opportunity> newMap, 
+		Map<ID, Opportunity> oldMap)
 	{
-		// Pattern 1 - terrible implementation
+		// Pattern 2 - Straightforward common implementation
+		Set<ID> opportunityIDsWithStagenameChanges = new Set<ID>();
 		
 		// Get OpportunityContactRoles
 		for(Opportunity op: newList)
 		{
-			if(op.StageName == oldMap.get(op.id).StageName) continue;	// Only process changes to stagename
+			if(op.StageName != oldMap.get(op.id).StageName) 
+				opportunityIDsWithStagenameChanges.add(op.id);
+		}
+		
+		// Quick exit if no processing required
+		if(opportunityIDsWithStagenameChanges.size()==0) return;	
 			
-            // SOQL inside of a loop! Horrific!
-			List<OpportunityContactRole> ocrs = 
-                [Select ID, ContactID, IsPrimary from OpportunityContactRole where OpportunityID = :op.id];
-			
-			if(ocrs.size()==0)
+		// Query for all related OpportunityContactRole
+		List<OpportunityContactRole> ocrs = 
+			[Select ID, ContactID, IsPrimary, OpportunityID 
+			from OpportunityContactRole 
+			where OpportunityID in :opportunityIDsWithStagenameChanges];
+
+		// Look for primary, or for no OCR on opportunities
+		Set<ID> primaryFound = new Set<ID>();
+		Set<ID> anyFound = new Set<ID>();
+		
+		for(OpportunityContactRole ocr: ocrs)
+		{
+			if(ocr.IsPrimary) primaryFound.add(ocr.OpportunityID);
+			anyFound.add(ocr.OpportunityID);
+		}
+
+		// Build list of opportunities with no contact role, 
+		// and list with contact role but no primary contact role
+		// Use maps because it's an easy way to get the keyset for later queries
+		Map<ID, Opportunity> opsWithNoContactRoles = new Map<ID, Opportunity>();
+		Map<ID, Opportunity> opsWithNoPrimary = new Map<ID, Opportunity>();
+
+		for(ID opid: opportunityIDsWithStagenameChanges)
+		{
+			if(!primaryFound.contains(opid))
 			{
-				// No associated contacts at all - 
-				// create a new task for the owner to create said contact
-				// Is task already set?
-				List<Task> tasks = 
-					[SELECT ID, OwnerID, WhatID, Status, Subject, Type 
-						from Task 
-						where OwnerID = :op.OwnerID 
-						And Type='Other' 
-						And WhatID = :op.ID 
-						And IsClosed = False 
-						And Subject = 'Assign Primary Contact'   ];
-				if(tasks.size()>0) continue;	// Already set
-				
-				Task t = new Task(OwnerID = op.OwnerID, 
-							Type='Other', WhatID = op.ID, 
-							Subject = 'Assign Primary Contact', 
-							ActivityDate = Date.Today().AddDays(3) );
-				insert t;   // DML inside of a loop! Just as bad!
-				continue;
+				if(anyFound.contains(opid)) 
+					opsWithNoPrimary.put(opid, newMap.get(opid));
+				else 
+					opsWithNoContactRoles.put(opid, newMap.get(opid));
 			}
-			
-			// If primary exists, we're done
-			Boolean primaryFound = false;
-			for(OpportunityContactRole ocr: ocrs)
+		}
+		
+		// First deal with any opportunities without contact roles
+		if(opsWithNoContactRoles.size()>0)
+		{
+			// Find out which ones have existing tasks
+			List<Task> tasks = 
+				[SELECT ID, OwnerID, WhatID, Status, Subject, Type 
+				from Task 
+				where Type='Other' 
+				And WhatID in :OpsWithNoContactRoles.keyset() 
+				And IsClosed = False 
+				And Subject = 'Assign Primary Contact'   ];
+
+			// Don't loop through opportunities - waste of time. 
+			// Loop through tasks to build set of IDs with tasks
+			Set<ID> opsWithTasks = new Set<ID>();
+			for(Task t: tasks)
 			{
-				if(ocr.IsPrimary)
+				// Get the opportunity
+				Opportunity op = opsWithNoContactRoles.get(t.WhatID);	
+				// Make sure it's assigned to the right person
+				if(t.OwnerID == op.OwnerID) opsWithTasks.add(op.ID);	
+			}
+			// Now create new tasks
+			List<Task> newTasks = new List<Task>();
+			for(Opportunity op: opsWithNoContactRoles.values())
+			{
+				if(!opsWithTasks.contains(op.id))
 				{
-					primaryFound = true;
-					break;
-				}
-				
+					newTasks.add(
+						new Task(OwnerID = op.OwnerID, Type='Other', 
+						WhatID = op.ID, Subject = 'Assign Primary Contact', 
+						ActivityDate = Date.Today().AddDays(3) ));
+				}				
 			}
-			if(primaryFound) continue;
-			
+			if(newTasks.size()>0) insert newTasks;
+		}
+
+		if(opsWithNoPrimary.size()>0)
+		{			
 			// Get a list of the contacts
 			List<ID> contactIdsForOps = new List<ID>();
 			for(OpportunityContactRole ocr: ocrs)
 			{
-				contactIdsForOps.add(ocr.ContactID);
+				if(opsWithNoPrimary.containskey(ocr.OpportunityID)) 
+					contactIdsForOps.add(ocr.ContactID);
 			}
 			
 			// Now query the contacts with their OpportunityContactRoles
 			Map<ID, Contact> contactsForOps = 
 				new Map<ID, Contact>(
 					[Select ID, 
-						(Select ID, IsPrimary from OpportunityContactRoles) 
-						from Contact where ID in :contactIdsForOps]);
+					(Select ID, IsPrimary, OpportunityID from OpportunityContactRoles) 
+					from Contact where ID in :contactIdsForOps]);
 
 			// Now figure out which of the OpportunityContactRoles should be set to primary
-			OpportunityContactRole bestOcr = null;
-			Integer bestContactAllOcrCount = 0;
-			Integer bestContactPrimaryOcrCount = 0;
+			// Map of opportunity ID to the best OCR for that ID
+			Map<ID,OpportunityContactRole> bestOcrs = new Map<ID, OpportunityContactRole>();
+			// Map of opportunity to Total # OCRs on the current best opportunity contact
+			Map<ID,Integer> bestContactAllOcrCount = new Map<ID,Integer>();
+			
+			// Map of opportunity to Total # primary OCRs on the current best opportunity contact
+			Map<ID,Integer> bestContactPrimaryOcrCount = new Map<ID, Integer>();
 			
 			for(OpportunityContactRole ocr: ocrs)
 			{
+				if(!opsWithNoPrimary.containskey(ocr.OpportunityID)) continue;
 				Contact currentContact = contactsForOps.get(ocr.ContactID);
 				Integer primaryCount = 0;
 				for(OpportunityContactRole testOcr: currentContact.OpportunityContactRoles)
 				{
-					if(testOcr.IsPrimary) primaryCount ++;
+					if(testocr.IsPrimary) primaryCount++;
 				}
-				if(bestOcr == null || 
-					primaryCount > bestContactPrimaryOcrCount ||
-					(primaryCount == bestContactAllOcrCount && 
-						currentContact.OpportunityContactRoles.size()> bestContactAllOcrCount))
+				if(!bestOcrs.containskey(ocr.OpportunityID) || 
+					primaryCount > bestContactPrimaryOcrCount.get(ocr.OpportunityID) ||
+					(primaryCount == bestContactAllOcrCount.get(ocr.OpportunityID) && 
+					currentContact.OpportunityContactRoles.size()> bestContactAllOcrCount.get(ocr.OpportunityID)))
 				{
-					bestOcr = ocr;
-					bestContactAllOcrCount = currentContact.OpportunityContactRoles.size();
-					bestContactPrimaryOcrCount = primaryCount;
+					bestOcrs.put(ocr.OpportunityID, ocr);
+					bestContactAllOcrCount.put(ocr.OpportunityID, currentContact.OpportunityContactRoles.size());
+					bestContactPrimaryOcrCount.put(ocr.OpportunityID, primaryCount);
 				}
 			}
-			bestocr.IsPrimary = true;
-			update bestOcr; // Another DML inside of a loop
+			
+			for(OpportunityContactRole best: bestOcrs.values()) best.IsPrimary = true;
+			update bestOcrs.values();
 		}
-
 		
 	}
-
 
 }
