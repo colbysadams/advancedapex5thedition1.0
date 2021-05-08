@@ -25,7 +25,30 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+public class BulkPatternBatch implements Database.Batchable<sObject> {
+	public final string query;
+	public final Set<ID> opportunityIds;
 
-trigger OnOpportunity on Opportunity (after update) {
-	BulkPatterns.afterUpdateOpportunityBatchSupport(trigger.new, trigger.newmap, trigger.oldmap);
+	
+	public bulkPatternBatch(Set<ID> opportunityIDsToUpdate)
+	{
+		opportunityids = opportunityIDsToUpdate;
+		query = 'SELECT ID, OwnerID from Opportunity where ID in :opportunityids ';
+	}
+	
+	public Database.QueryLocator start(Database.BatchableContext BC){
+		return Database.getQueryLocator(query);
+	}
+	
+	public void execute(Database.BatchableContext BC, List<sObject> scope){
+		List<Opportunity> ops = (List<Opportunity>)scope;
+		Map<ID, Opportunity> newmap = new Map<ID, Opportunity>(ops);
+		BulkPatterns.afterUpdateOpportunityBatchSupport(ops, newMap, null);
+		return;
+	}
+	
+	public void finish(Database.BatchableContext BC){
+		
+	}	
+
 }

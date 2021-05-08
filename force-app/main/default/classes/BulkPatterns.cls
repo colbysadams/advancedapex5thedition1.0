@@ -30,29 +30,21 @@ public with sharing class BulkPatterns {
 
 
 	/*
-		This solution uses future calls to move the intensive operation into
+		This solution uses batch Apex to move the intensive operation into
 		a separate execution context
 	*/
-	@future
-	public static void futureUpdateOpportunities(Set<ID> opportunitiyIds)
-	{
-		Map<ID, Opportunity> newMap = 
-			new Map<ID, Opportunity>(
-				[SELECT ID, OwnerID from Opportunity where ID in :opportunitiyIds]);
-		afterUpdateOpportunityFutureSupport(newMap.values(), newMap, null);
-	}
-	private static Boolean futureCalled = false;
+	private static Boolean batchCalled = false;
 
-	public static void afterUpdateOpportunityFutureSupport(
+	public static void afterUpdateOpportunityBatchSupport(
 		List<Opportunity> newList, Map<ID, Opportunity> newMap, 
 		Map<ID, Opportunity> oldMap)
 	{
-		// Pattern 6 - with future support
+		// Pattern 7 - with batch support
 		
 		Set<ID> opportunityIDsWithStagenameChanges = new Set<ID>();
 		
 		// Get OpportunityContactRoles
-		if(!System.isFuture())
+		if(!System.isBatch())
 		{
 			for(Opportunity op: newList)
 			{
@@ -61,9 +53,12 @@ public with sharing class BulkPatterns {
 			}
 			if(newList.size()>50)
 			{
-				if(!futureCalled) 
-					futureUpdateOpportunities(opportunityIDsWithStagenameChanges);
-				futureCalled = true;
+				if(!batchCalled) 
+				{
+					Database.executeBatch(new BulkPatternBatch(
+						opportunityIDsWithStagenameChanges), 100);
+				}
+				batchCalled = true;
 				return;
 			}
 		}
