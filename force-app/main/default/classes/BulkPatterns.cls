@@ -181,5 +181,46 @@ public with sharing class BulkPatterns {
 			update ocrsToUpdate;
 		}		
 	}
+
+	// Don't allow deletetion of primary contact role
+	public static void beforeDeleteOpportunityContactRoleSupport(
+		List<OpportunityContactRole> oldList)
+	{
+		for(OpportunityContactRole ocr: oldList)
+		{
+			if(ocr.isPrimary) ocr.addError('You may not delete a primary contact. Choose another primary contact first.');
+		}
+	} 
+
+	public Class OcrException extends Exception	{}
+
+	// Don't allow update of a primary contact role to non-primary unless another is being set to primary
+	public static void beforeUpdateOpportunityContactRoleSupport(
+		List<OpportunityContactRole> newList, Map<ID, OpportunityContactRole> oldMap) 
+	{
+		// We need to group the contact roles by opportunity
+		Map<ID, List<OpportunityContactRole>> ocrsByOp = new Map<ID, List<OpportunityContactRole>>(); 
+		for(OpportunityContactRole ocr: newList)
+		{
+			ID opId = ocr.OpportunityID;
+			if(!ocrsByOp.containsKey(opId)) ocrsByOp.put(opId, new List<OpportunityContactRole>());
+			ocrsByOp.get(opid).add(ocr);
+		}
+		for(ID opID: ocrsByOp.keyset())
+		{
+			// Just make sure there's at least one primary opportunity contact role if the primary changed
+			Boolean primaryChanged = false;
+			Boolean primaryFound = false;
+			for(OpportunityContactRole ocr: ocrsByOp.get(opID))
+			{
+				if(!ocr.isPrimary && oldMap.get(ocr.id).isPrimary) primaryChanged = true;
+				if(ocr.isPrimary) { primaryFound = true; break; }
+			}
+			if(!primaryFound && primaryChanged) throw new OcrException('Attempting to remove a primary contact without replacement');
+		}
+
+	}
+
+
 }
 

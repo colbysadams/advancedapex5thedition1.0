@@ -75,11 +75,115 @@ public class TestBulkPatterns {
     	
     } 
 
+    @istest
+    public static void PrimaryOcrDeletionTest() {
+        List<Opportunity> ops = new List<Opportunity>();
+        // Note, you may need to adjust these numbers
+		initTestObjects(ops, 100, 15, 15, 40, true);
+        Test.StartTest();
+        // Requery to get the opportunity contact roles
+		List<OpportunityContactRole> ocrs = [Select ID, IsPrimary from OpportunityContactRole
+											where IsPrimary=True And Opportunityid in :ops];
+        // Delete them
+		Boolean deleteFailed = false;
+		try {
+			delete ocrs;
+		} catch (Exception ex) {
+			deleteFailed = true;
+		}
+        Test.StopTest();
+		// Make sure it failed
+        system.assert(deleteFailed);
+    }
+
+    @istest
+    public static void PrimaryOcrReplacementTestPositive() {
+        List<Opportunity> ops = new List<Opportunity>();
+        // Note, you may need to adjust these numbers
+		initTestObjects(ops, 100, 0, 3, 100, true);
+        Test.StartTest();
+        // Requery to get the opportunity contact roles for each opportunity
+		List<Opportunity> opswithocrs = [Select ID, (Select ID, IsPrimary from OpportunityContactRoles) from Opportunity
+											where id in :ops];
+        // Change primary to non-primary - no other change
+		Map<ID, OpportunityContactRole> ocrsToUpdate = new Map<ID, OpportunityContactRole>();
+		for(Opportunity op: opswithocrs) {
+			for(OpportunityContactRole ocr: op.OpportunityContactRoles) 
+			{
+				if(ocr.isPrimary)
+				{
+					ocr.isPrimary = false;
+					ocrsToUpdate.put(ocr.id, ocr);
+				}
+			}
+		}
+		Boolean replaceFailed = false;
+
+		try {
+			update ocrsToUpdate.Values();
+		} catch (Exception ex) {
+			replaceFailed = true;
+		}
+        Test.StopTest();
+		System.assert(replaceFailed);
+    }
+
+    @istest
+    public static void PrimaryOcrReplacementTestNegative() {
+        List<Opportunity> ops = new List<Opportunity>();
+        // Note, you may need to adjust these numbers
+		initTestObjects(ops, 100, 0, 2, 100, true);
+        Test.StartTest();
+        // Requery to get the opportunity contact roles for each opportunity
+		List<Opportunity> opswithocrs = [Select ID, (Select ID, IsPrimary from OpportunityContactRoles) from Opportunity
+											where id in :ops];
+        // Change primary to non-primary - no other change
+		Map<ID, OpportunityContactRole> ocrsToUpdate = new Map<ID, OpportunityContactRole>();
+		for(Opportunity op: opswithocrs) {
+			for(OpportunityContactRole ocr: op.OpportunityContactRoles) 
+			{
+				if(ocr.isPrimary)
+				{
+					ocr.isPrimary = false;
+					ocrsToUpdate.put(ocr.id, ocr);
+				}
+			}
+		}
+		for(Opportunity op: opswithocrs) {
+			for(OpportunityContactRole ocr: op.OpportunityContactRoles) 
+			{
+				if(!ocr.isPrimary && !ocrsToUpdate.containsKey(ocr.id))
+				{
+					ocr.isPrimary = true;
+					ocrsToUpdate.put(ocr.id, ocr);
+				}
+			}
+		}
+
+		Boolean replaceFailed = false;
+
+		try {
+			update ocrsToUpdate.Values();
+		} catch (Exception ex) {
+			replaceFailed = true;
+		}
+        Test.StopTest();
+		System.assert(!replaceFailed);
+    }	
+
 	// Prepare the specified number of opportunities, with contact roles on each.
 	// The contact roles are distributed evenly among the number of contacts specified.
     public static void initTestObjects(List<Opportunity> newOpportunities, 
     	Integer numberOfOpportunities, Integer numberOfOtherOpportunities, 
     	Integer contactRolesPerOp, Integer numberOfContacts)
+    {
+		initTestObjects(newOpportunities, numberOfOpportunities, numberOfOtherOpportunities,
+						contactRolesPerOp, numberOfContacts, false);
+	}
+
+	public static void initTestObjects(List<Opportunity> newOpportunities, 
+    	Integer numberOfOpportunities, Integer numberOfOtherOpportunities, 
+    	Integer contactRolesPerOp, Integer numberOfContacts, Boolean addPrimaryContactRole)
     {
     	if(numberOfContacts < contactRolesPerOp) 
     		numberOfContacts = contactRolesPerOp;
@@ -126,6 +230,7 @@ public class TestBulkPatterns {
 			{
 				ocrList.add(
 					new OpportunityContactRole(OpportunityID = op.id, 
+									isPrimary = (ocrNumber==0),
 									ContactID = cts[contactNumber].id));
 				contactNumber++;
 				if(contactNumber >= numberOfContacts) contactNumber = 0;
