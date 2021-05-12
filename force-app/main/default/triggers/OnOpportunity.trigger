@@ -26,6 +26,6 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger OnOpportunity on Opportunity (after update) {
-	BulkPatterns.afterUpdateOpportunityBatchSupport(trigger.new, trigger.newmap, trigger.oldmap);
+trigger OnOpportunity on Opportunity (after insert) {
+	BulkPatterns.afterInsertOpportunityFutureSupport(trigger.new, trigger.newmap);
 }

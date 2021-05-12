@@ -33,153 +33,62 @@ public with sharing class BulkPatterns {
 		This solution uses batch Apex to move the intensive operation into
 		a separate execution context
 	*/
-	private static Boolean batchCalled = false;
-
-	public static void afterUpdateOpportunityBatchSupport(
-		List<Opportunity> newList, Map<ID, Opportunity> newMap, 
-		Map<ID, Opportunity> oldMap)
+	public static void afterInsertOpportunityFutureSupport(
+		List<Opportunity> newList, Map<ID, Opportunity> newMap)
 	{
-		// Pattern 7 - with batch support
-		
-		Set<ID> opportunityIDsWithStagenameChanges = new Set<ID>();
-		
-		// Get OpportunityContactRoles
-		if(!System.isBatch())
+		if(system.isFuture())
 		{
-			for(Opportunity op: newList)
+			// This scenario is a problem - see text for discussion
+		}
+		addMissingContactRoles(newMap.keyset());
+	}
+
+	@future
+	public static void addMissingContactRoles(Set<ID> opids)
+	{
+		List<Opportunity> insertedOps = [Select ID, AccountID, (Select ID, IsPrimary from OpportunityContactRoles) from Opportunity where Id in :opids];
+
+		List<Opportunity> opsToProcess = new List<Opportunity>();
+		for(Opportunity op: insertedOps) if(op.OpportunityContactRoles.size()==0 && op.AccountId!=null) opsToProcess.add(op);
+
+		if(opsToProcess.size()==0) return;	// Nothing to do
+
+		// We want to find the contact on each account with the most activities
+		// Get a list of account
+		Set<ID> accountIds = new Set<ID>();
+		for(Opportunity op: opsToProcess) if(op.AccountID!=null) accountIDs.add(op.AccountID);
+		
+		Map<ID, Contact> possibleContacts = new Map<ID, Contact>([Select ID, AccountID from Contact where AccountID in :accountIds]);
+		// How do we count activities on all contacts on all accounts?
+
+		List<AggregateResult> counts = [Select count(Id) taskCount, whoID theContactID from Task where WhoID in :possibleContacts.keyset() Group By WhoID];
+
+		// Find the contact with the most activities for each account
+		Map<ID, AggregateResult> bestContactByAccount = new Map<ID, AggregateResult>();
+		for(AggregateResult ar: counts) 
+		{
+			ID accountID = possibleContacts.get((ID)(ar.get('theContactID'))).AccountID;
+			if(!bestContactByAccount.containsKey(accountID)) 
 			{
-				if(op.StageName != oldMap.get(op.id).StageName) 
-					opportunityIDsWithStagenameChanges.add(op.id);
+				bestContactByAccount.put(accountID, ar);
 			}
-			if(newList.size()>50)
+			else 
 			{
-				if(!batchCalled) 
-				{
-					Database.executeBatch(new BulkPatternBatch(
-						opportunityIDsWithStagenameChanges), 100);
-				}
-				batchCalled = true;
-				return;
+				AggregateResult currentAr = bestContactByAccount.get(accountID);
+				if((Integer)currentAr.get('taskCount') < (Integer)ar.get('taskCount')) bestContactByAccount.put(accountID, ar);
 			}
 		}
-		else opportunityIDsWithStagenameChanges.addall(newMap.keyset());
 		
-		// Quick exit if no processing required
-		if(opportunityIDsWithStagenameChanges.size()==0) return;	
-			
-			
-		// Query for all related OpportunityContactRole
-		List<OpportunityContactRole> ocrs = 
-			[Select ID, ContactID, IsPrimary, OpportunityID 
-			from OpportunityContactRole 
-			where OpportunityID in :opportunityIDsWithStagenameChanges];
-
-		// Look for primary, or for no OCR on opportunities
-		Set<ID> opsWithNoPrimaryWithContactRoles = opportunityIDsWithStagenameChanges.Clone();
-		Set<ID> opsWithNoContactRoles = opportunityIDsWithStagenameChanges.Clone();
-		
-		for(OpportunityContactRole ocr: ocrs)
+		List<OpportunityContactRole> ocrsToInsert = new List<OpportunityContactRole>();
+		for(Opportunity op: opsToProcess) 
 		{
-			if(ocr.IsPrimary) opsWithNoPrimaryWithContactRoles.remove(ocr.OpportunityID);
-			opsWithNoContactRoles.remove(ocr.OpportunityID);
+			AggregateResult currentAr = bestContactByAccount.get(op.AccountId);
+			if(currentAr==null) continue; 	// No contacts on the account
+			ocrsToInsert.add(new OpportunityContactRole(OpportunityID = op.id, ContactID = (ID)(currentAr.get('theContactID')), IsPrimary = true));
 		}
-		opsWithNoPrimaryWithContactRoles.RemoveAll(opsWithNoContactRoles);
 
-		// First deal with any opportunities without contact roles
-		if(opsWithNoContactRoles.size()>0)
-		{
-			// Find out which ones have existing tasks
-			List<Task> tasks = 
-				[SELECT ID, OwnerID, WhatID, Status, Subject, Type 
-				from Task where Type='Other' 
-				And WhatID in :opsWithNoContactRoles And IsClosed = False 
-				And Subject = 'Assign Primary Contact'   ];
+		if(ocrsToInsert.size()>0) insert ocrsToInsert;
 
-			// Don't loop through opportunities - waste of time. 
-			// Loop through tasks to build set of IDs with tasks
-			Set<ID> opsWithoutTasks = opsWithNoContactRoles.clone();
-			for(Task t: tasks)
-			{
-				Opportunity op = newMap.get(t.WhatID);	// Get the opportunity
-				// Make sure it's assigned to the right person
-				if(t.OwnerID == op.OwnerID) opsWithoutTasks.remove(op.ID);	
-			}
-			// Now create new tasks
-			List<Task> newTasks = new List<Task>();
-			for(ID opid: opsWithoutTasks)
-			{
-				Opportunity op = newMap.get(opid);
-				newTasks.add(new Task(OwnerID = op.OwnerID, Type='Other', 
-					WhatID = op.ID, Subject = 'Assign Primary Contact', 
-					ActivityDate = Date.Today().AddDays(3) ));
-			}
-			if(newTasks.size()>0) insert newTasks;
-			
-		}
-		if(opsWithNoPrimaryWithContactRoles.size()>0)
-		{			
-			// Get a list of the contacts
-			List<ID> contactIdsForOps = new List<ID>();
-			for(OpportunityContactRole ocr: ocrs)
-			{
-				if(opsWithNoPrimaryWithContactRoles.contains(ocr.OpportunityID)) 
-					contactIdsForOps.add(ocr.ContactID);
-			}
-			
-			// Now get the totals count and primary count for each contact by 
-			// using aggregate functions and grouping by contact
-			List<AggregateResult> ocrsByContact = 
-				[Select ContactID, Count(ID) total 
-				from OpportunityContactRole 
-				where ContactID in :contactIdsForOps 
-				Group By ContactID];
-			List<AggregateResult> primaryOcrsByContact = 
-				[Select ContactID, Count(ID) total 
-				from OpportunityContactRole where IsPrimary=true 
-				and ContactID in :contactIdsForOps Group By ContactID];
-
-			// Let's get the totals by contact for a faster loop
-			Map<ID, Integer> totalsByContact = new Map<ID, Integer>();
-			Map<ID, Integer> primaryByContact = new Map<ID, Integer>();
-			for(AggregateResult ar: ocrsByContact) 
-				totalsByContact.put((ID)ar.get('ContactID'), 
-				Integer.ValueOf(ar.get('total')));
-			for(AggregateResult ar: primaryOcrsByContact) 
-				primaryByContact.put((ID)ar.get('ContactID'), 
-				Integer.ValueOf(ar.get('total')));
-
-			List<Opportunity> opportunitiesWithoutPrimary = 
-				[Select ID ,(Select ID, ContactID, IsPrimary 
-				from OpportunityContactRoles) from Opportunity 
-				where ID in :opsWithNoPrimaryWithContactRoles];
-			List<OpportunityContactRole> ocrsToUpdate = 
-				new List<OpportunityContactRole>();
-			
-			for(Opportunity op: opportunitiesWithoutPrimary)
-			{
-				OpportunityContactRole bestOcr = null;
-				Integer primaryCount = 0;
-				Integer totalCount = 0;
-				for(OpportunityContactRole opOcrs: op.OpportunityContactRoles)
-				{
-					// Use intermediate variables to reduce # of map accesses in loop
-					Integer primaryCountForThisContact = primaryByContact.get(opocrs.Contactid);
-					Integer totalCountForThisContact = totalsByContact.get(opocrs.contactId);
-
-					if(bestOcr==null || 
-						primaryCountForThisContact > primaryCount ||
-					(primaryCountForThisContact == totalCount && 
-						totalCountForThisContact > totalCount )) {
-					primaryCount = primaryCountForThisContact;
-					totalCount = totalCountForThisContact;
-					bestOcr = opOcrs;
-					}
-				}
-				bestOcr.IsPrimary = true;
-				ocrsToUpdate.add(bestOcr);
-			}
-			update ocrsToUpdate;
-		}		
 	}
 
 	// Don't allow deletetion of primary contact role

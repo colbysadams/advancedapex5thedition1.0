@@ -30,52 +30,6 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 public class TestBulkPatterns {
     
     @istest
-    public static void bulkOpportunityTest() {
-        List<Opportunity> ops = new List<Opportunity>();
-        // Note, you may need to adjust these numbers
-		initTestObjects(ops, 100, 15, 15, 40);
-        //initTestObjects(ops, 50, 10, 10, 20);   // for the awful example
-        Test.StartTest();
-        for(Opportunity op: ops) op.StageName = 'Qualification';
-        update ops;
-        Test.StopTest();
-        
-        validateOCRs(ops);
-        
-    }
-
-    @istest
-    static void createTaskTest()
-    {
-    	Integer numberOfOpportunities = 100;
-    	//Integer numberOfOpportunities = 50; // for the awful example
-        List<Opportunity> ops = new List<Opportunity>();
-		for(Integer x=0; x<numberOfOpportunities; x++)
-		{
-			ops.add(new Opportunity(
-				CloseDate = Date.Today().addDays(5), 
-				Name = 'optest_' + String.valueOf(x), 
-				StageName = 'Prospecting' ));	
-		}
-		
-		insert ops;
-
-        Test.StartTest();
-        for(Opportunity op: ops) op.StageName = 'Qualification';
-        update ops;
-        Test.StopTest();
-
-		List<Task> tasks = 
-			[SELECT ID, OwnerID, WhatID, Status, Subject, Type 
-				from Task 
-				where OwnerID = :UserInfo.getUserID() 
-				And Type='Other' And IsClosed = False 
-				And Subject = 'Assign Primary Contact' ];
-		system.assertEquals(NumberOfOpportunities, tasks.size());
-    	
-    } 
-
-    @istest
     public static void PrimaryOcrDeletionTest() {
         List<Opportunity> ops = new List<Opportunity>();
         // Note, you may need to adjust these numbers
@@ -171,6 +125,17 @@ public class TestBulkPatterns {
 		System.assert(!replaceFailed);
     }	
 
+    @istest
+    public static void bulkOpportunityWithAccountsTest() {
+        List<Opportunity> ops = initTestObjectsWithAccounts(100, 100, 40);
+        Test.StartTest();
+        insert ops;
+        Test.StopTest();
+        
+        validateOCRs(ops);
+        
+    }
+
 	// Prepare the specified number of opportunities, with contact roles on each.
 	// The contact roles are distributed evenly among the number of contacts specified.
     public static void initTestObjects(List<Opportunity> newOpportunities, 
@@ -238,6 +203,48 @@ public class TestBulkPatterns {
 			
 		}
 		insert ocrList;
+    }
+
+
+	public static List<Opportunity> initTestObjectsWithAccounts(
+		Integer numberOfOpportunities, Integer numberOfContacts, Integer maxActivitiesPerAccount)
+    {
+		Account testact = new Account(Name = 'testaccount');
+		insert testact;
+
+		List<Contact>cts = new List<Contact>();    
+		for(Integer x=0;x<numberOfContacts;x++)    
+		{      
+			cts.add(new Contact(AccountID = testact.id, LastName = 'cttest_' + String.valueOf(x)));
+		}
+		
+		insert cts;
+
+		List<Task> tasks = new List<Task>();
+		Integer taskcount = maxActivitiesPerAccount;
+		for(Contact ct: cts) 
+		{
+			for(Integer t= 0 ; t< taskcount; t++)
+			{
+				tasks.add(new Task(WhoID = ct.id, Subject = ct.LastName + string.ValueOf(t)));
+			}
+			taskcount = (taskcount>maxActivitiesPerAccount)? 1: taskcount+1;
+		}
+		insert tasks;
+
+		List<Opportunity> newOpportunities = new List<Opportunity>();
+
+		for(Integer x=0; x<numberOfOpportunities; x++)
+		{
+			newOpportunities.add(
+				new Opportunity(AccountID = testact.id, CloseDate = Date.Today().addDays(5), 
+						Name = 'optest_' + String.valueOf(x), 
+						StageName = 'Prospecting' ));	
+		}
+
+		// Don't insert the test opportunities - the unit test will do that
+		return (newOpportunities);
+
     }
 
     public static void validateOCRs(List<Opportunity> ops)
