@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>UserIsSpecial__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>A field indicating this user is special in some way</description>
+    <externalId>false</externalId>
+    <inlineHelpText>You are special!</inlineHelpText>
+    <label>UserIsSpecial</label>
+    <trackFeedHistory>false</trackFeedHistory>
+    <type>Checkbox</type>
+</CustomField>
