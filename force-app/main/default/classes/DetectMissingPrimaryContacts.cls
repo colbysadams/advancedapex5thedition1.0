@@ -26,11 +26,16 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-public inherited sharing class DetectMissingPrimaryContacts {
+public inherited sharing class DetectMissingPrimaryContacts implements TriggerAPI.ITriggerHandler {
 
     // If changing stages and no primary contact exists, create a new task to create one
-    public static void beforeOpportunityUpdate(TriggerOperation triggerType, List<Opportunity> newList, Map<ID, Opportunity> newMap, Map<Id, Opportunity> oldMap)
+    public void HandleTrigger(TriggerOperation TrigType, List<SObject> newSObjectList, Map<Id, SObject> newSObjectMap, 
+    List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
     {
+        // Cast to the correct type
+        List<Opportunity> newList = (List<Opportunity>)newSObjectList;
+        Map<ID, Opportunity> oldMap = (Map<ID, Opportunity>)oldSObjectMap;
+
 		Map<ID, Opportunity> opportunityIDsWithStagenameChanges = new Map<ID, Opportunity>();
 		
 		// Get OpportunityContactRoles

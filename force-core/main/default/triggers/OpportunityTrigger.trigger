@@ -26,25 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-public inherited sharing class AutoProgressStage implements TriggerAPI.ITriggerHandler {
+trigger OpportunityTrigger on Opportunity (before insert, before update, after insert, after update, before delete, after delete, after undelete) {
 
-    public void HandleTrigger(TriggerOperation TrigType, List<SObject> newSObjectList, Map<Id, SObject> newSObjectMap, 
-    List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
-    {
-        // Cast to the correct type
-        List<Opportunity> newList = (List<Opportunity>)newSObjectList;
-        Map<ID, Opportunity> oldMap = (Map<ID, Opportunity>)oldSObjectMap;
-
-        // Get OpportunityContactRoles
-		for(Opportunity op: newList)
-		{
-			if((TrigType == TriggerOperation.BEFORE_INSERT || op.Amount != oldMap.get(op.id).Amount) &&
-                op.Amount >= 50000 && op.StageName == 'Prospecting') 
-            {
-				    op.StageName = 'Qualification';
-            }
-		}
-
-    }
-
+    TriggerDispatcher.handleTrigger('Opportunity', trigger.OperationType, trigger.new, trigger.newMap, trigger.old, trigger.oldMap);
 }

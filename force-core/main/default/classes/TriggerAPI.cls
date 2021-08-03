@@ -26,13 +26,13 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger OpportunityTrigger on Opportunity (before insert, before update) {
+public Inherited sharing class TriggerAPI {
 
-    // Change the order in which these methods are called to see a test failure in class TestDetectMissingPrimaryContacts
-
-    AutoProgressStage.beforeOpportunityUpdateOrInsert(trigger.OperationType, trigger.new, trigger.newMap, trigger.oldMap);
-
-    if(trigger.OperationType == TriggerOperation.BEFORE_UPDATE) DetectMissingPrimaryContacts.beforeOpportunityUpdate(trigger.OperationType, trigger.new, trigger.newMap, trigger.oldMap);
+    public interface ITriggerHandler
+    {
+        void HandleTrigger(TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
+            List<SObject> oldList, Map<ID, SObject> oldMap);
+    }
 
 
 }

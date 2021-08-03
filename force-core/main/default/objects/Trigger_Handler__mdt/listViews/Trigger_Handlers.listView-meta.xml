@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ListView xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Trigger_Handlers</fullName>
+    <columns>MasterLabel</columns>
+    <columns>Object_Type__c</columns>
+    <columns>Trigger_Type__c</columns>
+    <columns>Apex_Class__c</columns>
+    <columns>Priority__c</columns>
+    <filterScope>Everything</filterScope>
+    <label>Trigger Handlers</label>
+</ListView>
