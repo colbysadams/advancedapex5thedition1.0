@@ -27,9 +27,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerHandler {
 
+    /* Use a single boolean as a simple approach
+    private static Boolean executedOnce = false; 
+    */
+    private static Set<ID> executedOnce = new Set<ID>();
+
     public static void handleTrigger(TriggerOperation TrigType, List<SObject> newSObjectList, Map<Id, SObject> newSObjectMap, 
-        List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
+    List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
     {
+        /* A simple static variable can gate the entire handler
+        if(executedOnce) return;
+        executedOnce = true;
+        */
+
+
         // Cast to the correct type
         List<Contact> newList = (List<Contact>)newSObjectList;
         Map<ID, Contact> oldMap = (Map<ID, Contact>)oldSObjectMap;
@@ -51,6 +62,8 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
         // Update the priorities
         for(Contact ct: ContactsWithChangedHighValue)
         {
+            if(executedOnce.contains(ct.id)) continue;
+            executedOnce.add(ct.id);
             newTasks.add(
                 new Task(OwnerID = ct.OwnerID, Type='Other', 
                     Subject = 'Executive outreach!', 
