@@ -32,7 +32,18 @@ public Inherited sharing class TriggerAPI {
     {
         void HandleTrigger(TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
             List<SObject> oldList, Map<ID, SObject> oldMap);
-    }
+    
+        Boolean CaptureInternalDMLTriggers();
+
+        Boolean HandleAllTriggers();
+
+        Boolean IgnoreApplicationTriggers();
+
+        void InternalTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
+            List<SObject> oldList, Map<ID, SObject> oldMap);
+        }
+
+
 
 
 }

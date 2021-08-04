@@ -34,9 +34,19 @@ public inherited sharing class TriggerDispatcher {
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
         system.debug('handleTrigger - ' + objectType + ' ' + triggerType + ' trigger ');
-        List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType);
+        List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType, null);
+        if(currentHandler!=null)
+        {
+            // This is a DML invoked from another trigger
+            if(currentHandler.CaptureInternalDMLTriggers()) 
+            {
+                System.debug('Invoking Internal ' + currentHandler);
+                currentHandler.InternalTrigger(objectType, triggerType, newList, newMap, oldList, oldMap);
+            }
+        }
         for(TriggerAPI.ITriggerHandler handler: handlers) 
         {
+            if(currentHandler!=null && !handler.HandleAllTriggers() && (handler.IgnoreApplicationTriggers() || currentHandler.CaptureInternalDMLTriggers() )) continue;
             TriggerAPI.ITriggerHandler previousHandler = currentHandler;
             currentHandler = handler;
             System.debug('Invoking ' + handler);
@@ -46,7 +56,22 @@ public inherited sharing class TriggerDispatcher {
 
     }
 
-    private static List<TriggerAPI.ITriggerHandler> getTriggerHandlers(String objectType, TriggerOperation triggerType) 
+    // Can be used by one handler to dispatch triggers to another
+    public static void dispatchTrigger(String handlerName, String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
+    List<SObject> oldList, Map<ID, SObject> oldMap)
+    {
+        List<TriggerAPI.ITriggerHandler> availableHandlers = getTriggerHandlers(objectType, triggerType, handlerName);
+        // There should only be one entry for a given class, object and trigger type
+        if(availableHandlers.size()!=1) return;
+        TriggerAPI.ITriggerHandler previousHandler = currentHandler;
+        currentHandler = availableHandlers[0];
+        System.debug('Invoking ' + currentHandler);
+        currentHandler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
+        currentHandler = previousHandler;
+    }
+
+
+    private static List<TriggerAPI.ITriggerHandler> getTriggerHandlers(String objectType, TriggerOperation triggerType, String className) 
     {
         String operationType = triggerType.name();
 
@@ -58,6 +83,7 @@ public inherited sharing class TriggerDispatcher {
 
         for(Trigger_Handler__mdt handler: handlers) 
         {
+            if(className!=null && handler.Apex_Class__c != className) continue;
             System.Type thetype = Type.forName(handler.Apex_Class__c);
 			if(thetype==null) thetype = Type.forName('',handler.Apex_Class__c);	// Try resolving local class
             if(thetype!=null) 

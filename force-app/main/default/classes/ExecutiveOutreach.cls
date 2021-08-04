@@ -61,4 +61,15 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
 
         insert newTasks;
     }
+
+    public Boolean CaptureInternalDMLTriggers() { return false; }
+
+    public Boolean HandleAllTriggers() { return false; }
+
+    public Boolean IgnoreApplicationTriggers() { return false; }
+
+    public void InternalTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
+        List<SObject> oldList, Map<ID, SObject> oldMap) {}
+    
+
 }

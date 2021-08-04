@@ -86,4 +86,14 @@ public inherited sharing class HandleContactPriorities implements TriggerAPI.ITr
         if(opsToUpdate.size()>0) update opsToUpdate;
 
     }
+
+    public Boolean CaptureInternalDMLTriggers() { return false; }
+
+    public Boolean HandleAllTriggers() { return false; }
+
+    public Boolean IgnoreApplicationTriggers() { return false; }
+
+    public void InternalTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
+        List<SObject> oldList, Map<ID, SObject> oldMap) {}
+    
 }
