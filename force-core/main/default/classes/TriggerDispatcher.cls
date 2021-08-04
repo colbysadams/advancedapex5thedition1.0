@@ -31,16 +31,11 @@ public inherited sharing class TriggerDispatcher {
     public static void handleTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
-
-        if(TriggerDMLSupport.updatingPendingObjects) return;
-
         List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType);
         for(TriggerAPI.ITriggerHandler handler: handlers) 
         {
             handler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
         }
-
-        TriggerDMLSupport.updatePendingObjects();
 
     }
 

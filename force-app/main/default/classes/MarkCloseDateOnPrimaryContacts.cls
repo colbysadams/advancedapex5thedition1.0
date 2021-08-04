@@ -59,8 +59,10 @@ public inherited sharing class MarkCloseDateOnPrimaryContacts implements Trigger
         }
 
         // Prepare update list
-        Map<ID, Contact> contactsToUpdate = new Map<ID, Contact>((List<Contact>)TriggerDMLSupport.getUpdatableObjects('Contact', contactToCloseDates.keyset()));
-        for(ID contactID: contactToCloseDates.keyset()) contactsToUpdate.get(contactID).Last_Close_Date__c = contactToCloseDates.get(contactID);
+        List<Contact> contactsToUpdate = new List<Contact>();
+        for(ID contactID: contactToCloseDates.keyset()) contactsToUpdate.add(new Contact(ID = contactID, Last_Close_Date__c = contactToCloseDates.get(contactID)));
+
+        update contactsToUpdate;
 
     }
 

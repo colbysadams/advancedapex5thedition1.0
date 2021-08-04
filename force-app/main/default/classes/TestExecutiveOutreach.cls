@@ -27,7 +27,8 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 @istest
-public class TestFlagHighValueOpportunities {
+public class TestExecutiveOutreach {
+    
     @TestSetup
 	public static void initTestObjects()
     {
@@ -57,6 +58,9 @@ public class TestFlagHighValueOpportunities {
 
     }
 
+
+    // Note here the challenge of testing the insertion condition in this case 
+
     @istest
     static void TestUpdateHighValueOpsSingle()
     {
@@ -81,9 +85,10 @@ public class TestFlagHighValueOpportunities {
         update ops;
         Test.stopTest();
 
-        List<Contact> contactResults = [Select ID, High_Value_Opportunities__c from Contact where ID in :cts];
+        List<Task> tasks = [Select ID from Task where OwnerID = :UserInfo.getUserId() And Type='Other' And Subject = 'Executive outreach!'];
 
-        for(Contact ct: contactResults) system.assertEquals(1, ct.High_Value_Opportunities__c);
+        System.assertEquals(0, tasks.size());
+
     }
 
     @istest
@@ -110,8 +115,9 @@ public class TestFlagHighValueOpportunities {
         update ops;
         Test.stopTest();
 
-        List<Contact> contactResults = [Select ID, High_Value_Opportunities__c from Contact where ID in :cts];
+        List<Task> tasks = [Select ID from Task where OwnerID = :UserInfo.getUserId() And Type='Other' And Subject = 'Executive outreach!'];
 
-        for(Contact ct: contactResults) system.assertEquals(5, ct.High_Value_Opportunities__c);
+        System.assertEquals(2, tasks.size());
+
     }
 }
