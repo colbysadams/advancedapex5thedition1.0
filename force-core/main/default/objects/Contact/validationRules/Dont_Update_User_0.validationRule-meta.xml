@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ValidationRule xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>Dont_Update_User_0</fullName>
+    <active>false</active>
+    <errorConditionFormula>NOT(ISNEW()) &amp;&amp; LastName = &apos;cttest_0&apos;</errorConditionFormula>
+    <errorMessage>You can&apos;t update user 0</errorMessage>
+</ValidationRule>

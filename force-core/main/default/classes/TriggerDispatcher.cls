@@ -34,6 +34,7 @@ public inherited sharing class TriggerDispatcher {
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
         system.debug('handleTrigger - ' + objectType + ' ' + triggerType + ' trigger ');
+        StaticManager.onTrigger();
         List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType, null);
         if(currentHandler!=null)
         {

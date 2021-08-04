@@ -27,19 +27,28 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerHandler {
 
-    /* Use a single boolean as a simple approach
-    private static Boolean executedOnce = false; 
-    */
-    private static Set<ID> executedOnce = new Set<ID>();
+    public class LocalStaticsClass Extends StaticManager
+    {
+        public Set<ID> executedOnce {
+            get { 
+                Set<ID> currentSet = (Set<ID>)RetrieveValue('executedOnce');
+                return (currentSet.clone());    // We don't want to modify the stored values directly
+            }
+            set{ StoreValue('executedOnce', value); }
+        }
+
+        public LocalStaticsClass() {
+            super('ExecutiveOutreach');
+            executedOnce = new Set<ID>();
+        }
+    }
+
+    private static LocalStaticsClass LocalStatics = new LocalStaticsClass();
 
     public static void handleTrigger(TriggerOperation TrigType, List<SObject> newSObjectList, Map<Id, SObject> newSObjectMap, 
     List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
     {
-        /* A simple static variable can gate the entire handler
-        if(executedOnce) return;
-        executedOnce = true;
-        */
-
+        Set<ID> executedOnce = LocalStatics.executedOnce;
 
         // Cast to the correct type
         List<Contact> newList = (List<Contact>)newSObjectList;
@@ -71,6 +80,8 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
                     ActivityDate = Date.Today().AddDays(1) ));
 
         }
+
+        LocalStatics.executedOnce = executedOnce;   // Update the static list
 
         insert newTasks;
     }

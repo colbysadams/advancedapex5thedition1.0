@@ -122,4 +122,26 @@ public class TestExecutiveOutreach {
         System.assertEquals(2, tasks.size());
 
     }
+
+    @istest
+    public static void TestHighValuesOnly()
+    {
+        List<Contact> cts = [Select ID from Contact];
+        
+        Test.startTest();
+        System.debug('Starting test');
+        for(Contact ct: cts) ct.High_Value_Opportunities__c = 5;
+        List<Database.SaveResult> results = Database.update(cts, false);
+        Test.stopTest();
+
+        // Count successes
+        Integer successes = 0;
+        for(Database.SaveResult sr: results) if( sr.isSuccess()) successes+=1;
+
+        List<Task> tasks = [Select ID from Task where OwnerID = :UserInfo.getUserId() And Type='Other' And Subject = 'Executive outreach!'];
+
+        System.assertEquals(successes, tasks.size());
+
+    }
+
 }
