@@ -27,6 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerHandler {
 
+    /*
     public class LocalStaticsClass Extends StaticManager
     {
         public Set<ID> executedOnce {
@@ -44,11 +45,12 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
     }
 
     private static LocalStaticsClass LocalStatics = new LocalStaticsClass();
+    */
 
     public static void handleTrigger(TriggerOperation TrigType, List<SObject> newSObjectList, Map<Id, SObject> newSObjectMap, 
     List<SObject> oldSObjectList, Map<ID, SObject> oldSObjectMap)
     {
-        Set<ID> executedOnce = LocalStatics.executedOnce;
+        //Set<ID> executedOnce = LocalStatics.executedOnce;
 
         // Cast to the correct type
         List<Contact> newList = (List<Contact>)newSObjectList;
@@ -58,7 +60,9 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
         List<Contact> ContactsWithChangedHighValue = new List<Contact>();
         for(Contact ct: newList)
         {
-            if(ct.High_Value_Opportunities__c != oldMap.get(ct.id).High_Value_Opportunities__c && ct.High_Value_Opportunities__c >= 2)
+            if(ct.High_Value_Opportunities__c != oldMap.get(ct.id).High_Value_Opportunities__c && ct.High_Value_Opportunities__c >= 2 
+                // && ct.Admin_Automation_Update__c == oldMap.get(ct.id).Admin_Automation_Update__c
+                )
             {
                 ContactsWithChangedHighValue.add(ct);
             }
@@ -71,8 +75,8 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
         // Update the priorities
         for(Contact ct: ContactsWithChangedHighValue)
         {
-            if(executedOnce.contains(ct.id)) continue;
-            executedOnce.add(ct.id);
+            //if(executedOnce.contains(ct.id)) continue;
+            //executedOnce.add(ct.id);
             newTasks.add(
                 new Task(OwnerID = ct.OwnerID, Type='Other', 
                     Subject = 'Executive outreach!', 
@@ -81,7 +85,7 @@ public inherited sharing class ExecutiveOutreach implements TriggerAPI.ITriggerH
 
         }
 
-        LocalStatics.executedOnce = executedOnce;   // Update the static list
+        //LocalStatics.executedOnce = executedOnce;   // Update the static list
 
         insert newTasks;
     }

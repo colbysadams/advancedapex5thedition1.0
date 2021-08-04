@@ -61,6 +61,8 @@ public inherited sharing class FlagHighValueOpportunities implements  TriggerAPI
         List<Contact> contactsToUpdate = new List<Contact>();
         for(ID contactID: contactToOps.keyset()) contactsToUpdate.add(new Contact(ID = contactID, High_Value_Opportunities__c = contactToOps.get(contactID)));
 
+        // for(Contact ct: contactsToUpdate) ct.Admin_Apex_Update__c = 'FlagHighValueOpportunities:' + string.valueOf(DateTime.Now());
+
         update contactsToUpdate;
 
     }
