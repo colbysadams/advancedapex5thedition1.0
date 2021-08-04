@@ -57,6 +57,9 @@ public class TestFlagHighValueOpportunities {
 
     }
 
+
+    // Note here the challenge of testing the insertion condition in this case 
+
     @istest
     static void TestUpdateHighValueOpsSingle()
     {

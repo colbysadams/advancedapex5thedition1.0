@@ -58,10 +58,9 @@ public inherited sharing class FlagHighValueOpportunities implements  TriggerAPI
         }
 
         // Prepare update list
-        List<Contact> contactsToUpdate = new List<Contact>();
-        for(ID contactID: contactToOps.keyset()) contactsToUpdate.add(new Contact(ID = contactID, High_Value_Opportunities__c = contactToOps.get(contactID)));
+        Map<ID, Contact> contactsToUpdate = new Map<ID, Contact>((List<Contact>)TriggerDMLSupport.getUpdatableObjects('Contact', contactToOps.keyset()));
+        for(ID contactID: contactToOps.keyset()) contactsToUpdate.get(contactID).High_Value_Opportunities__c = contactToOps.get(contactID);
 
-        update contactsToUpdate;
 
     }
 
