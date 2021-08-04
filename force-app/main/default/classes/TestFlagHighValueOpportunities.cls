@@ -73,6 +73,7 @@ public class TestFlagHighValueOpportunities {
         insert ocrs;
 
         Test.startTest();
+        system.debug('Starting test');
 
         for(Opportunity op: ops)
         {
@@ -102,6 +103,7 @@ public class TestFlagHighValueOpportunities {
         insert ocrs;
 
         Test.startTest();
+        system.debug('Starting test');
 
         for(Opportunity op: ops)
         {

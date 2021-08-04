@@ -48,6 +48,8 @@ public class TestDetectMissingPrimaryContacts {
     {
         List<Opportunity> ops = [Select ID, StageName from Opportunity];
         Test.startTest();
+        system.debug('Starting test');
+
         for(Opportunity op: ops)
         {
             op.StageName = 'Qualification';

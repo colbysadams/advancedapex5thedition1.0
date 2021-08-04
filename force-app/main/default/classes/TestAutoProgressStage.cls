@@ -48,6 +48,8 @@ public with sharing class TestAutoProgressStage {
     {
         List<Opportunity> ops = [Select ID, StageName from Opportunity];
         Test.startTest();
+        system.debug('Starting test');
+
         double currentAmount = 40000;
         for(Opportunity op: ops)
         {

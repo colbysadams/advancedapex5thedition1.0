@@ -75,6 +75,8 @@ public class TestHandleContactPriorities {
         List<Contact> cts = [Select ID from Contact];
 
         Test.startTest();
+        system.debug('Starting test');
+
         for(Contact ct: cts) ct.Contact_Priority__c = 6;
 
         update cts;

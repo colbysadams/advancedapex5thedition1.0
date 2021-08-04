@@ -28,13 +28,20 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public inherited sharing class TriggerDispatcher {
 
+    public static TriggerAPI.ITriggerHandler currentHandler { public get; private set; }
+
     public static void handleTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
+        system.debug('handleTrigger - ' + objectType + ' ' + triggerType + ' trigger ');
         List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType);
         for(TriggerAPI.ITriggerHandler handler: handlers) 
         {
+            TriggerAPI.ITriggerHandler previousHandler = currentHandler;
+            currentHandler = handler;
+            System.debug('Invoking ' + handler);
             handler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
+            currentHandler = previousHandler;
         }
 
     }

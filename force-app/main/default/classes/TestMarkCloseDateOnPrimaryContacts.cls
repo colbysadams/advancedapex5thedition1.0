@@ -76,6 +76,7 @@ public class TestMarkCloseDateOnPrimaryContacts {
         insert ocrs;
 
         Test.startTest();
+        system.debug('Starting test');
 
         for(Opportunity op: ops)
         {
@@ -106,6 +107,7 @@ public class TestMarkCloseDateOnPrimaryContacts {
         insert ocrs;
 
         Test.startTest();
+        system.debug('Starting test');
 
         for(Opportunity op: ops)
         {
