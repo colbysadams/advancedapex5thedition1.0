@@ -6,6 +6,11 @@
         <field>WorkOrder.DescriptionSpanish__c</field>
         <readable>true</readable>
     </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>WorkOrder.TranslationPending__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
     <hasActivationRequired>false</hasActivationRequired>
     <label>Advanced Apex</label>
 </PermissionSet>

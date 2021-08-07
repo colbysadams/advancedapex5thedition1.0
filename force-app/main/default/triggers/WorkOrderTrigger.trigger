@@ -26,8 +26,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (after insert, after update) {
+trigger WorkOrderTrigger on WorkOrder (before insert, before update) {
 
-	FutureCalls.simpleHandleTrigger(trigger.new, trigger.newMap, 
+	FutureCalls.industrialStrengthHandleTrigger(trigger.new, trigger.newMap, 
 		trigger.oldMap, trigger.operationType);
 }

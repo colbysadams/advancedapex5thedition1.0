@@ -105,6 +105,10 @@
                 <behavior>Edit</behavior>
                 <field>DescriptionSpanish__c</field>
             </layoutItems>
+            <layoutItems>
+                <behavior>Edit</behavior>
+                <field>TranslationPending__c</field>
+            </layoutItems>
         </layoutColumns>
         <style>OneColumn</style>
     </layoutSections>

@@ -28,32 +28,54 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public inherited sharing class FutureCalls {
 
-	public static void SimpleHandleTrigger(List<WorkOrder> workOrderList, 
-		Map<ID, WorkOrder> newMap, Map<ID, WorkOrder> oldMap, 
-		TriggerOperation operation)
+	public static void industrialStrengthHandleTrigger(List<WorkOrder> workOrderList, 
+		Map<ID, WorkOrder> newMap, Map<ID, WorkOrder> oldMap, TriggerOperation operation)
 	{
-		if(operation == TriggerOperation.AFTER_INSERT) simpleFutureTranslate(newMap.keyset());
+		Boolean translationNeeded = false;
+
+		for(WorkOrder wo:workOrderList)
+		{
+			if(operation == TriggerOperation.BEFORE_INSERT || wo.Description!= oldMap.get(wo.id).Description) 
+			{
+				wo.TranslationPending__c = true; 
+				translationNeeded = true;
+			}
+		}
+		if(translationNeeded) industrialStrengthRequestAsync();
+	}
+
+	public static void industrialStrengthRequestAsync()
+	{
+		if(system.isFuture() || system.isBatch() || system.isQueueable()) 
+			industrialStrengthSync();
 		else
 		{
-			Set<ID> textChangedIds = new Set<ID>();
-			for(WorkOrder wo: workOrderList)
-			{
-				if(wo.Description!= oldMap.get(wo.id).Description) 
-					textChangedIds.add(wo.id); 
-			}
-			if(textChangedIds.size()>0) simpleFutureTranslate(textChangedIds);
+			if(Limits.getFutureCalls()< Limits.getLimitFutureCalls()-3)
+				industrialStrengthAsync();
 		}
-
 	}
 
 	@future(callout=true)
-	public static void simpleFutureTranslate(Set<ID> workOrderIds)
+	public static void industrialStrengthAsync()
 	{
+		industrialStrengthSync();
+	}
+
+	public static void industrialStrengthSync()
+	{
+		Integer allowedCallouts = Limits.getLimitCallouts() - Limits.getCallouts();
+		if(allowedCallouts<=0) return;
 		List<WorkOrder> workOrdersToUpdate = 
 			[SELECT ID, Description, DescriptionSpanish__c 
-			from WorkOrder where ID in :workOrderIds];
-		for(WorkOrder wo: workOrdersToUpdate) 
+			from WorkOrder 
+			where LastModifiedDate > :DateTime.Now().addHours(-24) 
+			And TranslationPending__c = true LIMIT :allowedCallouts];
+		if(workOrdersToUpdate.size()==0) return;
+		for(WorkOrder wo: workOrdersToUpdate)
+		{
 			wo.DescriptionSpanish__c = SimulatedTranslator.translate(wo.Description);
+			wo.TranslationPending__c = false;
+		}
 		update workOrdersToUpdate;
 	}
 

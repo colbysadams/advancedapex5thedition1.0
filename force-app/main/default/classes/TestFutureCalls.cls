@@ -65,12 +65,20 @@ public class TestFutureCalls {
  		Map<ID, WorkOrder> wosmap = new Map<ID, WorkOrder>(wos);
  		
  		List<WorkOrder> results = 
- 			[Select ID, Description, DescriptionSpanish__c 
+ 			[Select ID, Description, DescriptionSpanish__c, TranslationPending__c 
  			from WorkOrder where ID in :wosmap.keyset()];
- 		for(WorkOrder wo: results) 
- 			System.AssertEquals(wo.Description + ' in Spanish', 
- 				wo.DescriptionSpanish__c);
- 
+ 		Integer pending = 0;
+		Integer translated = 0;
+		for(WorkOrder wo: results) 
+		{
+ 			if(!wo.TranslationPending__c) {
+			 	System.AssertEquals(wo.Description + ' in Spanish', wo.DescriptionSpanish__c);
+				translated+=1;
+			}
+			else pending++;
+		}
+		system.assertEquals(results.size(), pending + translated);
+		system.assert(translated > 0);	// Make sure at least one was translated
     }
 
 }
