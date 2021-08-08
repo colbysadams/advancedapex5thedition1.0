@@ -27,7 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 @isTest
-public class TestFutureCalls {
+public class TestBatchApex {
 
 	
 	@istest
@@ -39,7 +39,16 @@ public class TestFutureCalls {
 	@istest
 	public static void testManyWorkOrders()
 	{
-		testWorkOrdersInsert(200);
+		// Batch unit tests are limited to a single execute
+		testWorkOrdersInsert(Limits.getLimitCallouts());
+	}
+
+	@istest
+	public static void testManyWorkOrdersFailure()
+	{
+		BatchApex.fakeException = true;
+		testWorkOrdersInsert(Limits.getLimitCallouts());
+		system.assert(BatchApex.errorsProcessed);
 	}
 
 
@@ -54,13 +63,20 @@ public class TestFutureCalls {
     				Subject='work order ' + String.valueOf(x), 
     				Description = 'This is work order # ' + String.ValueOf(x) ));
     	}
-    	Test.StartTest();
 
- 		Test.setMock(HttpCalloutMock.class, 
- 			new SimulatedTranslator.MockTranslator());
+		try {
+			Test.StartTest();
 
-		insert wos;
-		Test.StopTest();
+			Test.setMock(HttpCalloutMock.class, 
+				new SimulatedTranslator.MockTranslator());
+   
+		   insert wos;
+   
+		   Test.StopTest();
+		} catch (Exception ex) {
+			system.debug(ex.getMessage());
+		}
+		Test.getEventBus().deliver();		
  
  		Map<ID, WorkOrder> wosmap = new Map<ID, WorkOrder>(wos);
  		

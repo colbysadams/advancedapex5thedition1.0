@@ -26,8 +26,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (before insert, before update) {
+// This triggers on a platform event
 
-	BatchApex.handleTriggerWithBatchApex(trigger.new, trigger.newMap, 
-		trigger.oldMap, trigger.operationType);
+trigger BatchApexErrorTrigger on BatchApexErrorEvent (after insert) {
+    BatchApex.handleBatchApexErrorEvents(trigger.new);
 }
