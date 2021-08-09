@@ -25,58 +25,41 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-
-public inherited sharing class FutureCalls {
-
-	public static void industrialStrengthHandleTrigger(List<WorkOrder> workOrderList, 
-		Map<ID, WorkOrder> newMap, Map<ID, WorkOrder> oldMap, TriggerOperation operation)
+public without sharing class AppCustomSetting {
+	
+    @testvisible
+    private static AppConfig__c testConfig = null;
+	
+	public static AppConfig__c getAppConfig()
 	{
-		Boolean translationNeeded = false;
-
-		for(WorkOrder wo:workOrderList)
+		if(Test.isRunningTest() && testConfig!=null) return testConfig;
+		
+		AppConfig__c theobject = AppConfig__c.getInstance('default');
+		if(theObject==null || Test.isRunningTest()) 
 		{
-			if(operation == TriggerOperation.BEFORE_INSERT || wo.Description!= oldMap.get(wo.id).Description) 
-			{
-				wo.TranslationPending__c = true; 
-				translationNeeded = true;
-			}
+			theObject = new AppConfig__c();
+			theObject.name = 'default';
+			theObject.EnableDiagnostics__c = (Test.isRunningTest())? true: false;
+			theObject.AppEnabled__c = true;
+			if(!Test.isRunningTest()) Database.Insert(theobject);
+			else testconfig = theObject;
 		}
-		if(translationNeeded) industrialStrengthRequestAsync();
+		return theObject;
 	}
 
-	public static void industrialStrengthRequestAsync()
-	{
-		if(system.isFuture() || system.isBatch() || system.isQueueable()) 
-			industrialStrengthSync();
-		else
+	public static Boolean diagnosticsEnabled
+	{ 
+		get
 		{
-			if(Limits.getFutureCalls()< Limits.getLimitFutureCalls()-3)
-				industrialStrengthAsync();
+			return GetAppConfig().EnableDiagnostics__c;
 		}
 	}
-
-	@future(callout=true)
-	public static void industrialStrengthAsync()
+	
+	public static Boolean appEnabled
 	{
-		industrialStrengthSync();
-	}
-
-	public static void industrialStrengthSync()
-	{
-		Integer allowedCallouts = Limits.getLimitCallouts() - Limits.getCallouts();
-		if(allowedCallouts<=0) return;
-		List<WorkOrder> workOrdersToUpdate = 
-			[SELECT ID, Description, DescriptionSpanish__c 
-			from WorkOrder 
-			where LastModifiedDate > :DateTime.Now().addHours(-24) 
-			And TranslationPending__c = true LIMIT :allowedCallouts];
-		if(workOrdersToUpdate.size()==0) return;
-		for(WorkOrder wo: workOrdersToUpdate)
+		get
 		{
-			wo.DescriptionSpanish__c = SimulatedTranslator.translate(wo.Description);
-			wo.TranslationPending__c = false;
+			return GetAppConfig().AppEnabled__c;
 		}
-		update workOrdersToUpdate;
 	}
-
 }

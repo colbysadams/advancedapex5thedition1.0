@@ -26,8 +26,22 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (before insert, before update) {
+trigger WorkOrderTrigger on WorkOrder (before insert, before update, after insert, after update) {
 
-	BatchApex.handleTriggerWithBatchApex(trigger.new, trigger.newMap, 
+	// Be sure to comment out the one that you aren't using
+	if(trigger.isBefore)
+	{
+		
+		QueueableApex.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
 		trigger.oldMap, trigger.operationType);
+		
+	}
+	else
+	{
+		/*
+		QueueableApex2.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
+		trigger.oldMap, trigger.operationType);
+		*/
+	}
+
 }

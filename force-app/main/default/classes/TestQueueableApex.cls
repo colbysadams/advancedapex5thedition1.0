@@ -27,8 +27,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 @isTest
-public class TestBatchApex {
-
+public class TestQueueableApex {
 	
 	@istest
 	public static void testOneWorkOrder()
@@ -40,17 +39,27 @@ public class TestBatchApex {
 	public static void testManyWorkOrders()
 	{
 		// Batch unit tests are limited to a single execute
-		testWorkOrdersInsert(Limits.getLimitCallouts());
+		testWorkOrdersInsert(200);
 	}
 
+// Comment out the following test and uncomment the one after to test QueueableApex2
 	@istest
 	public static void testManyWorkOrdersFailure()
 	{
-		BatchApex.fakeException = true;
-		testWorkOrdersInsert(Limits.getLimitCallouts());
-		system.assert(BatchApex.errorsProcessed);
+		QueueableApex.fakeException = true;
+		testWorkOrdersInsert(200);
+		system.assert(QueueableApex.errorsProcessed);
 	}
 
+/*	
+	@istest
+	public static void testManyWorkOrdersFailure()
+	{
+		QueueableApex2.fakeException = true;
+		testWorkOrdersInsert(200);
+		system.assert(QueueableApex2.errorsProcessed);
+	}
+*/
 
     private static void testWorkOrdersInsert(Integer recordCount) {
  		
@@ -76,7 +85,6 @@ public class TestBatchApex {
 		} catch (Exception ex) {
 			system.debug(ex.getMessage());
 		}
-		Test.getEventBus().deliver();		
  
  		Map<ID, WorkOrder> wosmap = new Map<ID, WorkOrder>(wos);
  		
@@ -87,8 +95,7 @@ public class TestBatchApex {
 		Integer translated = 0;
 		for(WorkOrder wo: results) 
 		{
- 			if(!wo.TranslationPending__c) {
-			 	System.AssertEquals(wo.Description + ' in Spanish', wo.DescriptionSpanish__c);
+ 			if(wo.DescriptionSpanish__c!=null && wo.DescriptionSpanish__c.contains(' in Spanish')) {
 				translated+=1;
 			}
 			else pending++;
