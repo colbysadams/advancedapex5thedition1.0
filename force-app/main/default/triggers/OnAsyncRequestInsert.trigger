@@ -25,9 +25,15 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF 
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+trigger OnAsyncRequestInsert on AsyncRequest__c (after insert) {
+	
+    if(Limits.getLimitQueueableJobs() - Limits.getQueueableJobs() > 0)
+		try
+		{
+			QueueableApex.startQueueable(null);
+		} catch(Exception ex)
+		{
+			// Ignore for now
+		}
 
-trigger WorkOrderTrigger on WorkOrder (after insert, after update) {
-
-	QueueableApex.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
-		trigger.oldMap, trigger.operationType);
 }

@@ -51,17 +51,7 @@ public class TestQueueableApex {
 		system.assert(QueueableApex.errorsProcessed);
 	}
 
-/*	
-	@istest
-	public static void testManyWorkOrdersFailure()
-	{
-		QueueableApex2.fakeException = true;
-		testWorkOrdersInsert(200);
-		system.assert(QueueableApex2.errorsProcessed);
-	}
-*/
-
-    private static void testWorkOrdersInsert(Integer recordCount) {
+   private static void testWorkOrdersInsert(Integer recordCount) {
  		
  		List<WorkOrder> wos = new List<WorkOrder>();
  		
