@@ -69,6 +69,18 @@ public without sharing class QueueableApex implements Queueable, Database.Allows
     		
     		if(success)
             {
+
+                // The following code will prevent the delete errors
+                /*List<AsyncRequest__c> relockRequests = [Select ID, AsyncType__c, Params__c 
+	    		from AsyncRequest__c 
+	    		where Error__c = false And ID = :currentRequest.id for update];
+                if(relockRequests.size()==0) 
+                {
+                    // You may have to do other things here
+                    return;
+                }
+                */
+
                 delete currentRequest;
                 // Optional
                 database.emptyRecycleBin(new List<ID>{currentRequest.id}); 
@@ -186,8 +198,8 @@ public without sharing class QueueableApex implements Queueable, Database.Allows
 					ApexClass.Name='QueueableApex'];
 		if(jobs.size()>=1 || (jobs.size()==1 && jobs[0].id != currentJobID)) return(null);	// Already have one queued by this user - don't need another
 
-        if (Limits.GetLimitQueueableJobs() - Limits.GetQueueableJobs() > 0)
-			return system.EnqueueJob(new QueueableApex());
+//        if (Limits.GetLimitQueueableJobs() - Limits.GetQueueableJobs() > 0)
+//			return system.EnqueueJob(new QueueableApex());
         else return null;
 	}
 
