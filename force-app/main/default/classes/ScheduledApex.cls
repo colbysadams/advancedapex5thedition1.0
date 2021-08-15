@@ -28,12 +28,55 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 public without sharing class ScheduledApex implements ScheduledDispatcher.IScheduleDispatched {
 
+    public static final string jobName = 'My Scheduler';
+    public static final Integer duration = 1;
+
+    private class AbortAndReschedule implements Queueable
+    {
+        integer attempts;
+        ID jobID;
+
+        public AbortAndReschedule(Integer thisAttempt, ID jid)
+        {
+            attempts = thisAttempt-1;
+            jobID = jid;
+        }
+
+        public void execute(QueueableContext context)
+        {
+            List<CronTrigger> jobs = 
+        	[SELECT Id, State FROM CronTrigger WHERE ID = :jobID];
+            if(jobs.size()==1 && jobs[0].State == 'EXECUTING')
+            {
+                if(attempts <0 )
+                {
+                    system.debug('Unable to restart the job');
+                    // Do something else here?
+                    return;
+                }
+                System.enqueueJob(new AbortAndReschedule(attempts, jobID));
+                return;
+            }
+            if(jobs.size()==1) system.abortJob(jobID);
+
+            ScheduledApex.startScheduler(DateTime.Now().addMinutes(duration));
+            
+        }
+
+    }
+
     public void execute(SchedulableContext sc)
     {
         // Perform any tasks that you want scheduled
 
+        // The following is a simple approach
         // Always abort the job on completion
-        // system.abortJob(sc.getTriggerID());	
+        //system.abortJob(sc.getTriggerID());	
+
+        //startScheduler(DateTime.Now().AddMinutes(duration));
+
+        // This logic may be more robust
+        System.enqueueJob(new AbortAndReschedule(5, sc.getTriggerId()));
     } 
 
     public static String getSchedulerExpression(Datetime dt) {
@@ -45,14 +88,15 @@ public without sharing class ScheduledApex implements ScheduledDispatcher.ISched
         	dt.month() + ' ? ' + dt.year());
     }
         
-    public static void startScheduler(DateTime scheduledTime, String jobName)
+    public static void startScheduler(DateTime scheduledTime)
     {
-        
+        String jobPattern = jobName + '%';
+
         // Is the job already running?
         List<CronTrigger> jobs = 
         	[SELECT Id, CronJobDetail.Name, State, NextFireTime
              FROM CronTrigger 
-             WHERE CronJobDetail.Name= :jobName];
+             WHERE CronJobDetail.Name Like :jobPattern];
     	if(jobs.size()>0 && jobs[0].state!='COMPLETED' && 
            jobs[0].state!='ERROR' && jobs[0].state!='DELETED')
     	{
@@ -70,7 +114,7 @@ public without sharing class ScheduledApex implements ScheduledDispatcher.ISched
 
         try
         {
-	        System.schedule(jobName, 
+	        System.schedule(jobName + '-' + string.valueOf(Crypto.getRandomLong()), 
 	                        getSchedulerExpression(scheduledTime), 
 	                        new ScheduledDispatcher());
         } catch(Exception ex)
@@ -82,9 +126,10 @@ public without sharing class ScheduledApex implements ScheduledDispatcher.ISched
     }
 
     @future
-    public static void StartScheduleFuture(DateTime scheduledTime, String jobname)
+    public static void StartScheduleFuture()
     {
-        startScheduler(scheduledTime, jobName);
+        startScheduler(DateTime.now().addMinutes(duration));
     }
+	
 
 }
