@@ -26,8 +26,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (after insert, after update) {
+public without sharing class ChangeDataCaptureApex {
 
-	//QueueableApex.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
-	//	trigger.oldMap, trigger.operationType);
+    public static void handleChangeEvent(List<WorkOrderChangeEvent> events)
+    {
+
+        Integer availableCallouts = Limits.getLimitCallouts();
+        List<WorkOrder> WorkOrdersToUpdate = new List<WorkOrder>();
+
+        for(WorkOrderChangeEvent event: events)
+        {
+            if(availableCallouts==0)
+            {
+                Eventbus.TriggerContext.currentContext().setResumeCheckpoint(event.replayId);
+                break;
+            }
+            EventBus.ChangeEventHeader header = event.ChangeEventHeader;
+            // Is it a change we care about?
+            if(header.changeType=='CREATE' ||
+                header.changeType=='UPDATE' && header.changedFields.contains('Description'))
+            {
+                String translation = event.Description + ' - No callouts from triggers';
+                availableCallouts-=1;
+                for(ID workOrderId: header.recordids)
+                {
+                    Workorder updatedWorkorder = new WorkOrder(id = workOrderId, DescriptionSpanish__c = translation);
+                    WorkOrdersToUpdate.add(updatedWorkorder);
+                }
+            }
+        }
+
+        if(WorkOrdersToUpdate.size()>0) update WorkOrdersToUpdate;
+
+    }
+
 }

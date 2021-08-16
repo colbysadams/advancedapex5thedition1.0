@@ -26,8 +26,62 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (after insert, after update) {
+@istest
+public class TestChangeDataCapture {
 
-	//QueueableApex.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
-	//	trigger.oldMap, trigger.operationType);
+	@istest
+	public static void testOneWorkOrder()
+	{
+		testWorkOrdersInsert(1);
+	}
+
+	@istest
+	public static void testManyWorkOrders()
+	{
+		// Batch unit tests are limited to a single execute
+		testWorkOrdersInsert(200);
+	}
+
+   private static void testWorkOrdersInsert(Integer recordCount) {
+ 		
+ 		List<WorkOrder> wos = new List<WorkOrder>();
+ 		
+ 		for(Integer x = 0; x<recordCount; x++)
+    	{
+    		wos.add(
+    			new WorkOrder(
+    				Subject='work order ' + String.valueOf(x), 
+    				Description = 'This is work order # ' + String.ValueOf(x) ));
+    	}
+
+		try {
+			Test.StartTest();
+
+		   insert wos;
+   
+		   Test.StopTest();
+           Test.getEventBus().deliver();    // Need to deliver platform event!
+		} catch (Exception ex) {
+			system.debug(ex.getMessage());
+		}
+ 
+ 		Map<ID, WorkOrder> wosmap = new Map<ID, WorkOrder>(wos);
+ 		
+ 		List<WorkOrder> results = 
+ 			[Select ID, Description, DescriptionSpanish__c, TranslationPending__c 
+ 			from WorkOrder where ID in :wosmap.keyset()];
+ 		Integer pending = 0;
+		Integer translated = 0;
+		for(WorkOrder wo: results) 
+		{
+ 			if(wo.DescriptionSpanish__c!=null && wo.DescriptionSpanish__c.contains(' No callouts')) {
+				translated+=1;
+			}
+			else pending++;
+		}
+		system.assertEquals(results.size(), pending + translated);
+		system.assert(translated > 0);	// Make sure at least one was translated
+    }
+
+
 }

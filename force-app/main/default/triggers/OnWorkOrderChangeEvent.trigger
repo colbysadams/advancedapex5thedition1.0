@@ -26,8 +26,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
-trigger WorkOrderTrigger on WorkOrder (after insert, after update) {
-
-	//QueueableApex.handleTriggerWithQueueable(trigger.new, trigger.newMap, 
-	//	trigger.oldMap, trigger.operationType);
+// Note, these are always after insert - it reflects the insertion of a change event, not the action on the record
+trigger OnWorkOrderChangeEvent on WorkOrderChangeEvent (after insert) {
+    ChangeDataCaptureApex.handleChangeEvent(Trigger.New);
 }
