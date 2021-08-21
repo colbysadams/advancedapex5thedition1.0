@@ -5,6 +5,9 @@
 package.xml
 force-app/main/default/profiles
 
+# Don't try to delete the only WorkOrder layout if coming from the previous module
+force-app/main/default/layouts/WorkOrder*
+
 # LWC configuration files
 **/jsconfig.json
 **/.eslintrc.json
