@@ -8,6 +8,10 @@
         <apexClass>ConfigCustomMetadata</apexClass>
         <enabled>true</enabled>
     </classAccesses>
+    <classAccesses>
+        <apexClass>ConfigSettingController</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <customMetadataTypeAccesses>
         <enabled>true</enabled>
         <name>MDSetting__mdt</name>

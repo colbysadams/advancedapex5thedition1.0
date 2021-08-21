@@ -1,0 +1,12 @@
+<template>
+    <lightning-card title="Custom Setting Configuration">
+        <div class="slds-var-m-around_medium">
+          <p>Configure the AppConfig__c custom setting</p>
+          <lightning-input type="checkbox" label="Application enabled" checked={appenabled} onchange={changeEnabled} ></lightning-input>
+          <lightning-input type="checkbox" label="Enable Diagnostics" checked={enablediagnostics} onchange={changeDiagnostics} ></lightning-input>
+        </div>
+        <div class="slds-var-m-around_medium">
+            <lightning-button variant="brand" label="Save Changes" title="Save configuration changes" onclick={handleClick} class="slds-m-left_x-small"></lightning-button>
+        </div>
+    </lightning-card>
+</template>
