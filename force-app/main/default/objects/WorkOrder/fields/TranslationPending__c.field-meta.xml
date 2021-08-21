@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CustomField xmlns="http://soap.sforce.com/2006/04/metadata">
+    <fullName>TranslationPending__c</fullName>
+    <defaultValue>false</defaultValue>
+    <description>Indicates that a description translation is pending</description>
+    <externalId>false</externalId>
+    <label>Translation Pending</label>
+    <trackFeedHistory>false</trackFeedHistory>
+    <trackHistory>false</trackHistory>
+    <type>Checkbox</type>
+</CustomField>
