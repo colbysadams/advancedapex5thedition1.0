@@ -12,6 +12,11 @@
         <valueSetDefinition>
             <sorted>false</sorted>
             <value>
+                <fullName>Amount Update</fullName>
+                <default>false</default>
+                <label>Amount Update</label>
+            </value>
+            <value>
                 <fullName>Translate Work Order</fullName>
                 <default>false</default>
                 <label>Translate Work Order</label>

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <PermissionSet xmlns="http://soap.sforce.com/2006/04/metadata">
+    <classAccesses>
+        <apexClass>Concurrency</apexClass>
+        <enabled>true</enabled>
+    </classAccesses>
     <description>Permission set for the book Advanced Apex in Salesforce</description>
     <fieldPermissions>
         <editable>true</editable>
@@ -18,7 +22,22 @@
     </fieldPermissions>
     <fieldPermissions>
         <editable>true</editable>
+        <field>AsyncRequest__c.NewAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AsyncRequest__c.OriginalAmount__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
         <field>AsyncRequest__c.Params__c</field>
+        <readable>true</readable>
+    </fieldPermissions>
+    <fieldPermissions>
+        <editable>true</editable>
+        <field>AsyncRequest__c.TargetOpportunity__c</field>
         <readable>true</readable>
     </fieldPermissions>
     <fieldPermissions>

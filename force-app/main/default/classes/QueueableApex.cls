@@ -46,7 +46,8 @@ public without sharing class QueueableApex implements Queueable, Database.Allows
     	List<AsyncRequest__c> requests;
     	try
     	{
-	    	requests = [Select ID, AsyncType__c, Params__c 
+	    	requests = [Select ID, AsyncType__c, Params__c, NewAmount__c,
+                OriginalAmount__c, TargetOpportunity__c 
 	    		from AsyncRequest__c 
 	    		where Error__c = false And
 	    		CreatedById = :UserInfo.getUserId() 
@@ -65,7 +66,11 @@ public without sharing class QueueableApex implements Queueable, Database.Allows
     		if(currentRequest.AsyncType__c=='Translate Work Order') 
     			success = translate(currentRequest);
     		
-    		// Add more here
+            if(currentRequest.AsyncType__c=='Amount Update') 
+                success = Concurrency.updateAmounts(currentRequest);
+    
+            
+                // Add more here
     		
     		if(success)
             {
