@@ -1,0 +1,15 @@
+<template>
+    <lightning-card title="Custom Metadata Configuration">
+        <div class="slds-var-m-around_medium">
+          <p>Configure the MDSetting custom metadata</p>
+          <lightning-input type="checkbox" label="Boolean setting" checked={booleansetting} onchange={changeBoolean} ></lightning-input>
+          <lightning-input type="text" label="Text setting" value={textsetting} onchange={changeText} ></lightning-input>
+        </div>
+        <template if:true={deploymentInProgress}>
+            <p class="slds-var-m-around_medium slds-text-color_success">Metadata deployment in progress!</p>
+        </template>        
+        <div class="slds-var-m-around_medium">
+            <lightning-button variant="brand" label="Save Changes" title="Save configuration changes" onclick={handleClick} class="slds-m-left_x-small"></lightning-button>
+        </div>
+    </lightning-card>    
+</template>
