@@ -31,17 +31,24 @@ public inherited sharing class TriggerDispatcher {
     public static void handleTrigger(String objectType, TriggerOperation triggerType, List<SObject> newList, Map<Id, SObject> newMap, 
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
-        List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType);
-        for(TriggerAPI.ITriggerHandler handler: handlers) 
+        DiagnosticsInstrumentation.push('Trigger ' + triggerType.name() + ' On object ' + objectType);
+        List<String> classNames = new List<String>();
+        List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType, classNames);
+        for(Integer handlerIndex = 0; handlerIndex<handlers.size(); handlerIndex++)
         {
+            TriggerAPI.ITriggerHandler handler = handlers[handlerIndex];
+            DiagnosticsInstrumentation.push('Invoking handler ' + classNames[handlerIndex]);
             handler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
+            DiagnosticsInstrumentation.pop();
         }
+        DiagnosticsInstrumentation.pop();
 
     }
 
-    private static List<TriggerAPI.ITriggerHandler> getTriggerHandlers(String objectType, TriggerOperation triggerType) 
+    private static List<TriggerAPI.ITriggerHandler> getTriggerHandlers(String objectType, TriggerOperation triggerType, List<String>classNames) 
     {
         String operationType = triggerType.name();
+        if(classNames!=null) classNames.clear();
 
         // At publication time you must include the order field in the query with custom metadata
         List<Trigger_Handler__mdt> handlers = [Select Apex_Class__c, Priority__c from Trigger_Handler__mdt where 
@@ -59,6 +66,7 @@ public inherited sharing class TriggerDispatcher {
                 if(theClass instanceof TriggerAPI.ITriggerHandler) 
                 {
                     results.add((TriggerAPI.ITriggerHandler)theClass);
+                    classNames.add(handler.Apex_Class__c);
                 }
             }
         }
