@@ -32,16 +32,21 @@ public inherited sharing class TriggerDispatcher {
                                 List<SObject> oldList, Map<ID, SObject> oldMap)
     {
         DiagnosticsInstrumentation.push('Trigger ' + triggerType.name() + ' On object ' + objectType);
-        List<String> classNames = new List<String>();
-        List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType, classNames);
-        for(Integer handlerIndex = 0; handlerIndex<handlers.size(); handlerIndex++)
-        {
-            TriggerAPI.ITriggerHandler handler = handlers[handlerIndex];
-            DiagnosticsInstrumentation.push('Invoking handler ' + classNames[handlerIndex]);
-            handler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
+        try {
+            List<String> classNames = new List<String>();
+            List<TriggerAPI.ITriggerHandler> handlers = getTriggerHandlers(objectType, triggerType, classNames);
+            for(Integer handlerIndex = 0; handlerIndex<handlers.size(); handlerIndex++)
+            {
+                TriggerAPI.ITriggerHandler handler = handlers[handlerIndex];
+                DiagnosticsInstrumentation.push('Invoking handler ' + classNames[handlerIndex]);
+                handler.HandleTrigger(triggerType, newList, newMap, oldList, oldMap);
+                DiagnosticsInstrumentation.pop();
+            }
             DiagnosticsInstrumentation.pop();
+        } catch (Exception ex) {
+            DiagnosticsInstrumentation.debugException(ex);
+            DiagnosticsInstrumentation.popAll();
         }
-        DiagnosticsInstrumentation.pop();
 
     }
 

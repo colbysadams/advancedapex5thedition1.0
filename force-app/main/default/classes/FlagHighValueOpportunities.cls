@@ -36,7 +36,7 @@ public inherited sharing class FlagHighValueOpportunities implements  TriggerAPI
         List<Opportunity> newList = (List<Opportunity>)newSObjectList;
         Map<ID, Opportunity> oldMap = (Map<ID, Opportunity>)oldSObjectMap;
 
-        Set<ID> OpsThatMayNeedContactUpdate = new Set<ID>();
+        Set<ID> OpsThatMayNeedContactUpdate; // = new Set<ID>();
 		for(Opportunity op: newList)
 		{
 			if((TrigType == TriggerOperation.AFTER_INSERT || 

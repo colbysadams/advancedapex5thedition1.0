@@ -89,6 +89,14 @@ public with sharing class DiagnosticsInstrumentation {
 		}
 		return result;
 	}
+
+	public static void debugException(Exception ex)
+	{
+		String exceptionInfo = 'Exception occurred line ' + 
+			ex.getLineNumber() + ' - ' + ex.getMessage() + 
+			' stack: ' + ex.getStackTraceString();
+		Debug(exceptionInfo);
+	}
 	
 
 }
