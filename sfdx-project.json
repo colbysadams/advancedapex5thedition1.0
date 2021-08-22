@@ -1,11 +1,14 @@
 {
   "packageDirectories": [
     {
+      "path": "force-core"
+    },
+    {
       "path": "force-app",
       "default": true
     }
   ],
   "namespace": "",
   "sfdcLoginUrl": "https://login.salesforce.com",
-  "sourceApiVersion": "51.0"
+  "sourceApiVersion": "52.0"
 }
