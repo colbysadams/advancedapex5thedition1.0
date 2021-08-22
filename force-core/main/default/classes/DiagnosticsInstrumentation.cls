@@ -96,6 +96,8 @@ public with sharing class DiagnosticsInstrumentation {
 			ex.getLineNumber() + ' - ' + ex.getMessage() + 
 			' stack: ' + ex.getStackTraceString();
 		Debug(exceptionInfo);
+		DebugInfo__c dbg = new DebugInfo__c(DebugData__c = currentLog());
+		if(diagnosticsEnabled) insert dbg;
 	}
 	
 
