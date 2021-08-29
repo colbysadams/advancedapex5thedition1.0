@@ -1,0 +1,15 @@
+{
+  "orgName": "Advanced Apex 5",
+  "edition": "Developer",
+  "description": "Sample code for Advanced Apex Programming 5th Edition",
+  "hasSampleData": true,
+  "features": ["EnableSetPasswordInApi","API","ChangeDataCapture","DebugApex","PlatformCache","PersonAccounts"],
+  "settings": {
+    "lightningExperienceSettings": {
+      "enableS1DesktopEnabled": true
+    },
+    "mobileSettings": {
+      "enableS1EncryptedStoragePref2": false
+    }
+  }
+}

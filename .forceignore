@@ -5,6 +5,11 @@
 package.xml
 force-app/main/default/profiles
 
+# Included to prevent deletion failures if using the same org after chapter 11
+force-app/main/default/layouts/Opportunity**
+force-app/main/default/objects/Opportunity/webLinks
+force-app/main/default/objects/Opportunity/fields/Tracking*
+
 # LWC configuration files
 **/jsconfig.json
 **/.eslintrc.json
