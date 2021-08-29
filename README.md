@@ -1,4 +1,6 @@
-# Advanced Apex Programming 5th Edition
+# Advanced Apex Programming 5th Edition - Person Account Example
+
+See file PersonAccounts.pdf in the root directory of this project for the explanatory text
 
 ## Dev, Build and Test
 

@@ -50,14 +50,21 @@ public class TestPersonAccount {
         contacts[0].LeadSource='Web';
         contacts[1].LeadSource='Phone Inquiry';
         contacts[2].LeadSource='Other';
+        insert contacts;
+        String leadSourceAlias = PersonAccountSupport.getPersonAccountAlias('LeadSource');
+	    String levelAlias = PersonAccountSupport.getPersonAccountAlias('Level2__c');
         if(PersonAccountSupport.isPersonAccountOrg())
         {
-   			String leadSourceAlias = PersonAccountSupport.getPersonAccountAlias('LeadSource');
             accounts[0].put(leadSourceAlias,'Web');
             accounts[1].put(leadSourceAlias,'Phone Inquiry');
             accounts[2].put(leadSourceAlias,'Other');
         }
-        insert contacts;
+        else {
+            PersonAccountSupport.fakePersonContactIDs = new List<ID>();
+            PersonAccountSupport.fakePersonAccountDuringTest = true;
+            for(Contact ct: contacts) 
+        	    PersonAccountSupport.fakePersonContactIDs.add(ct.id);
+        }
         Test.StartTest();
         insert accounts;
         Test.StopTest();
@@ -70,8 +77,6 @@ public class TestPersonAccount {
        	system.assertEquals('Secondary',contactMap.get(contacts[2].id).Level2__c);
         if(PersonAccountSupport.isPersonAccountOrg())
         {
-   			String leadSourceAlias = PersonAccountSupport.getPersonAccountAlias('LeadSource');
-			String levelAlias = PersonAccountSupport.getPersonAccountAlias('Level2__c');
 
             Map<ID, Account> accountMap = 
         	new Map<ID, Account>(

@@ -67,28 +67,39 @@ public with sharing class PersonAccountSupport {
 		}
 	}
 	
+	public static List<ID> fakePersonContactIDs = null;
+	
+	private static Boolean updatingPersonContact = false;
 
 	public static void processAccountTrigger(
 		Boolean isBefore, List<Account> newList, Map<ID, Account> oldMap)
 	{
-		if(!isPersonAccountOrg()) return;
+		if(!isPersonAccountOrg() && !fakePersonAccountDuringTest || 
+			updatingPersonContact) return;
 
-		if(isBefore)
+		if(!isBefore)
 		{
-			// Using before approach
-			String leadSourceAlias = getPersonAccountAlias('LeadSource');
-			String levelAlias = getPersonAccountAlias('Level2__c');
-			for(Account act: newList)
+			// Better approach can work on after trigger
+			Set<ID> personContactIds = new Set<ID>();
+			for(Integer x = 0; x<newList.size(); x++)
 			{
-				if(leadSourceAlias!=null && levelAlias!=null && 
-					(Boolean)act.get('IsPersonAccount'))
-				{	// Will only be valid on person accounts
-					if(act.get(leadSourceAlias)=='Web' || 
-						act.get(leadSourceAlias)=='Phone Inquiry')
-						act.put(levelAlias,'Primary'); 
-						else act.put(levelAlias,'Secondary');
-				}
+				if(fakePersonAccountDuringTest || 
+					newlist[x].get('PersonContactID')!=null ) 
+					personContactIds.add( 
+						(fakePersonAccountDuringTest)? 
+						fakePersonContactIDs[x]: 
+						(ID)newList[x].get('PersonContactID') );
 			}
+			if(personContactIds.size()==0) return;
+			Map<ID, Contact> personContacts = 
+				new Map<ID, Contact>(
+					[Select ID, LeadSource, Level2__c 
+					from Contact where ID in :personContactIds]);
+			processContactTrigger(true, 
+				personcontacts.values(), personcontacts);
+			updatingPersonContact = true;
+			update personcontacts.values();
+			updatingPersonContact = false;
 		}
 		
 	}
